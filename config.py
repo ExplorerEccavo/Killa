@@ -1,0 +1,28 @@
+# Конфигурация бота
+BOT_TOKEN = "MTQzMzA5MTYwOTYxNjA2MDQ2Ng.Gg6_2K.kWE9SnYOr47s-0911yHXNSqMkpOwxwR_NArnhs"
+
+# ID канала для отправки уведомлений о черном списке
+BLACKLIST_CHANNEL_ID = 1373294439069650944
+
+# Роли, которые могут использовать команду черного списка
+ALLOWED_ROLES = [
+    1167104883816673290,
+    1162584963867226182,
+    1215344989140164638
+    # Role ID 3
+]
+
+# Роли для упоминания в сообщении
+MENTION_ROLES = {
+    "leader": 1123552436779503679,
+    "deputy_leader": 1123552436779503679,
+    "curator_state": 1123552436779503679
+}
+
+# Настройки сообщения
+MESSAGE_CONFIG = {
+    "title": "Killa fmq",
+    "color_blacklist": 0xff0000,  # Красный цвет для добавления
+    "color_remove": 0x00ff00,     # Зеленый цвет для снятия
+    "footer_text": "Снять черный список"
+}
