@@ -3,6 +3,10 @@ from discord import app_commands
 from datetime import datetime
 import config
 import re
+import asyncio
+import subprocess
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -192,11 +196,41 @@ async def blacklist_error(interaction: discord.Interaction, error):
         )
 
 
+async def update_check():
+    try:
+        # Fetch latest from origin
+        result_fetch = await asyncio.to_thread(subprocess.run, ['git', 'fetch', 'origin'], capture_output=True, text=True)
+        if result_fetch.returncode != 0:
+            return
+
+        # Check how many commits behind
+        result_count = await asyncio.to_thread(subprocess.run, ['git', 'rev-list', '--count', 'HEAD..origin/main'], capture_output=True, text=True)
+        if result_count.returncode != 0:
+            return
+
+        count = int(result_count.stdout.strip())
+
+        if count > 0:
+            # Pull
+            result_pull = await asyncio.to_thread(subprocess.run, ['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
+
+    except Exception:
+        pass
+
+
 @bot.event
 async def on_ready():
     await tree.sync()
     print(f"✅ Бот {bot.user} готов к работе!")
     print(f"✅ Команда blacklist зарегистрирована")
+
+    # Setup scheduler for daily updates at midnight
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(update_check, CronTrigger(hour=0, minute=0))
+    scheduler.start()
+
+    print("Планировщик обновлений запущен. Проверка в 00:00 каждую ночь.")
+    await update_check()  # Check for updates at startup
 
 
 if __name__ == "__main__":

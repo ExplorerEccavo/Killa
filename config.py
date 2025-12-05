@@ -1,5 +1,6 @@
 # Конфигурация бота
-BOT_TOKEN = "MTQzMzA5MTYwOTYxNjA2MDQ2Ng.Gg6_2K.kWE9SnYOr47s-0911yHXNSqMkpOwxwR_NArnhs"
+BOT_TOKEN = ""
+
 
 # ID канала для отправки уведомлений о черном списке
 BLACKLIST_CHANNEL_ID = 1373294439069650944
